@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mohit Lokhande // Terminal Resume</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:#000;
+  color:#00ff41;
+  font-family:'Share Tech Mono','Courier New',monospace;
+  overflow-x:hidden;
+  line-height:1.6;
+}
+::-webkit-scrollbar{width:8px;}
+::-webkit-scrollbar-thumb{background:#00ff41;}
+::-webkit-scrollbar-track{background:#001a08;}
+
+canvas#matrix{
+  position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.35;
+}
+
+.scanline{
+  position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
+}
+
+.wrap{position:relative;z-index:2;max-width:900px;margin:0 auto;padding:40px 20px 100px;}
+
+/* Terminal window chrome */
+.terminal{
+  border:1px solid #00ff41;
+  border-radius:8px;
+  background:rgba(0,10,0,0.85);
+  box-shadow:0 0 30px rgba(0,255,65,0.25), inset 0 0 30px rgba(0,255,65,0.05);
+  margin-bottom:30px;
+  overflow:hidden;
+}
+.terminal-bar{
+  background:#0a1f0a;
+  padding:10px 15px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border-bottom:1px solid #00ff41;
+}
+.dot{width:12px;height:12px;border-radius:50%;}
+.dot.red{background:#ff5f56;}
+.dot.yellow{background:#ffbd2e;}
+.dot.green{background:#27c93f;}
+.terminal-title{margin-left:auto;font-size:0.8rem;color:#5fff8f;opacity:0.7;}
+.terminal-body{padding:25px 30px;}
+
+/* Prompt lines */
+.prompt::before{content:"guest@mohit:~$ ";color:#5fff8f;}
+.prompt{color:#00ff41;margin-bottom:10px;font-size:0.95rem;}
+
+h1{
+  font-size:clamp(1.8rem,6vw,3rem);
+  color:#00ff41;
+  text-shadow:0 0 10px #00ff41, 0 0 20px #00ff41;
+  margin:15px 0 5px;
+  letter-spacing:2px;
+}
+h2{
+  color:#5fff8f;
+  font-size:1.4rem;
+  margin-bottom:20px;
+  border-bottom:1px dashed #00ff41;
+  padding-bottom:10px;
+  letter-spacing:1px;
+}
+h2 span{color:#00ff41;}
+
+.typed-line{font-size:1.1rem;color:#5fff8f;min-height:28px;}
+.cursor-blink{animation:blink 1s step-end infinite;}
+@keyframes blink{50%{opacity:0;}}
+
+p{color:#c8ffd4;margin-bottom:12px;font-size:0.95rem;}
+p strong{color:#00ff41;}
+
+.tag-row{display:flex;flex-wrap:wrap;gap:10px;margin:15px 0;}
+.tag{
+  border:1px solid #00ff41;
+  color:#00ff41;
+  padding:5px 14px;
+  border-radius:4px;
+  font-size:0.8rem;
+  background:rgba(0,255,65,0.05);
+}
+
+/* Nav */
+nav{
+  position:sticky;top:0;z-index:10;
+  background:rgba(0,10,0,0.9);
+  border-bottom:1px solid #00ff41;
+  padding:15px 20px;
+  display:flex;
+  gap:25px;
+  flex-wrap:wrap;
+  justify-content:center;
+  backdrop-filter:blur(6px);
+}
+nav a{
+  color:#00ff41;
+  text-decoration:none;
+  font-size:0.85rem;
+  border:1px solid transparent;
+  padding:6px 14px;
+  border-radius:4px;
+  transition:0.2s;
+}
+nav a:hover{border-color:#00ff41;background:rgba(0,255,65,0.1);}
+
+/* Grid for skills/education */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:600px){.grid-2{grid-template-columns:1fr;}}
+
+.skill-row{margin-bottom:16px;}
+.skill-label{display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:6px;color:#5fff8f;}
+.bar-track{height:10px;background:#0a1f0a;border:1px solid #00ff41;border-radius:5px;overflow:hidden;}
+.bar-fill{height:100%;background:linear-gradient(90deg,#00ff41,#5fff8f);width:0%;transition:width 1.2s ease;box-shadow:0 0 8px #00ff41;}
+
+.edu-item{border-left:2px solid #00ff41;padding-left:18px;margin-bottom:22px;position:relative;}
+.edu-item::before{content:"";position:absolute;left:-7px;top:2px;width:12px;height:12px;border-radius:50%;background:#00ff41;box-shadow:0 0 10px #00ff41;}
+.edu-item h3{color:#fff;font-size:1.05rem;}
+.edu-item .meta{color:#5fff8f;font-size:0.8rem;margin:4px 0 8px;}
+
+/* Buttons */
+.btn-row{display:flex;gap:15px;flex-wrap:wrap;margin-top:20px;}
+.btn{
+  display:inline-block;
+  padding:12px 26px;
+  border:1px solid #00ff41;
+  color:#00ff41;
+  text-decoration:none;
+  border-radius:4px;
+  font-size:0.85rem;
+  transition:0.25s;
+  background:rgba(0,255,65,0.05);
+}
+.btn:hover{background:#00ff41;color:#000;box-shadow:0 0 20px #00ff41;}
+
+.contact-links{display:flex;gap:15px;flex-wrap:wrap;margin-top:15px;}
+.contact-links a{
+  color:#00ff41;border:1px solid #00ff41;padding:10px 16px;border-radius:4px;
+  text-decoration:none;font-size:0.85rem;transition:0.2s;
+}
+.contact-links a:hover{background:#00ff41;color:#000;}
+
+footer{text-align:center;color:#4a4a4a;font-size:0.8rem;padding:30px;position:relative;z-index:2;}
+footer span{color:#00ff41;}
+
+.reveal{opacity:0;transform:translateY(30px);transition:all 0.6s ease;}
+.reveal.show{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+<div class="scanline"></div>
+
+<nav>
+  <a href="#home">home</a>
+  <a href="#about">about</a>
+  <a href="#education">education</a>
+  <a href="#projects">projects</a>
+  <a href="#skills">skills</a>
+  <a href="#contact">contact</a>
+</nav>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <section id="home">
+    <div class="terminal reveal">
+      <div class="terminal-bar">
+        <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+        <div class="terminal-title">mohit@resume: ~/intro</div>
+      </div>
+      <div class="terminal-body">
+        <div class="prompt">whoami</div>
+        <h1>MOHIT LOKHANDE</h1>
+        <div class="typed-line"><span id="typedText"></span><span class="cursor-blink">_</span></div>
+        <p style="margin-top:20px;">
+          B.Sc. Computer Science graduate proficient in Linux Administration and AWS Cloud Services.
+          Skilled at implementing efficient solutions to enhance operational efficiency — ready to
+          deploy technical skills in a dynamic IT organization.
+        </p>
+        <div class="btn-row">
+          <a href="#contact" class="btn">./hire_me.sh</a>
+          <a href="#projects" class="btn">./view_projects.sh</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="terminal reveal">
+      <div class="terminal-bar">
+        <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+        <div class="terminal-title">mohit@resume: ~/about</div>
+      </div>
+      <div class="terminal-body">
+        <h2><span>#</span> About Me</h2>
+        <p>
+          I'm a Computer Science graduate (B.Sc.) proficient in Linux administration and AWS cloud services.
+          Skilled at implementing efficient solutions to enhance operational efficiency. I possess exceptional
+          written and verbal communication abilities, ready to leverage technical skills in a dynamic IT organization.
+        </p>
+        <div class="tag-row">
+          <span class="tag">CGPA: 7.52</span>
+          <span class="tag">AWS Cloud</span>
+          <span class="tag">Linux Admin</span>
+          <span class="tag">Networking</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EDUCATION -->
+  <section id="education">
+    <div class="terminal reveal">
+      <div class="terminal-bar">
+        <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+        <div class="terminal-title">mohit@resume: ~/education</div>
+      </div>
+      <div class="terminal-body">
+        <h2><span>#</span> Education</h2>
+
+        <div class="edu-item">
+          <h3>B.Sc. Computer Science</h3>
+          <div class="meta">Your College Name | CGPA: 7.52</div>
+          <p>Graduated with a strong foundation in programming, systems, networking, and cloud computing concepts.</p>
+        </div>
+
+        <div class="edu-item">
+          <h3>Higher Secondary (12th)</h3>
+          <div class="meta">Your School Name</div>
+          <p>Completed higher secondary education with focus on the Science stream.</p>
+        </div>
+
+        <div class="edu-item">
+          <h3>AWS Cloud Certification</h3>
+          <div class="meta">Certification Program</div>
+          <p>Hands-on training in AWS core services including EC2, S3, IAM, and VPC.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <div class="terminal reveal">
+      <div class="terminal-bar">
+        <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+        <div class="terminal-title">mohit@resume: ~/projects</div>
+      </div>
+      <div class="terminal-body">
+        <h2><span>#</span> Featured Project</h2>
+        <h3 style="color:#fff;margin-bottom:10px;">Cloud Infrastructure Automation</h3>
+        <div class="tag-row">
+          <span class="tag">AWS EC2</span>
+          <span class="tag">Linux</span>
+          <span class="tag">Shell Scripting</span>
+          <span class="tag">S3</span>
+          <span class="tag">IAM</span>
+        </div>
+        <p><strong>Objective:</strong> Automated deployment and monitoring of cloud-based Linux servers to enhance uptime and reduce manual configuration errors.</p>
+        <p><strong>Role:</strong> Configured EC2 instances, managed IAM roles/policies, set up S3 storage buckets, and wrote shell scripts to automate routine server maintenance tasks.</p>
+        <p><strong>Result:</strong> Improved deployment speed and reduced manual intervention through automation and structured cloud architecture.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <div class="terminal reveal">
+      <div class="terminal-bar">
+        <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+        <div class="terminal-title">mohit@resume: ~/skills</div>
+      </div>
+      <div class="terminal-body">
+        <h2><span>#</span> Technical Skills</h2>
+        <div class="grid-2">
+          <div>
+            <div class="skill-row">
+              <div class="skill-label"><span>AWS Cloud Services</span><span>90%</span></div>
+              <div class="bar-track"><div class="bar-fill" data-w="90"></div></div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-label"><span>Linux Administration</span><span>88%</span></div>
+              <div class="bar-track"><div class="bar-fill" data-w="88"></div></div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-label"><span>Networking</span><span>80%</span></div>
+              <div class="bar-track"><div class="bar-fill" data-w="80"></div></div>
+            </div>
+          </div>
+          <div>
+            <div class="skill-row">
+              <div class="skill-label"><span>Shell Scripting</span><span>82%</span></div>
+              <div class="bar-track"><div class="bar-fill" data-w="82"></div></div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-label"><span>Database Basics</span><span>75%</span></div>
+              <div class="bar-track"><div class="bar-fill" data-w="75"></div></div>
+            </div>
+            <div class="skill-row">
+              <div class="skill-label"><span>Communication</span><span>92%</span></div>
+              <div class="bar-track"><div class="bar-fill" data-w="92"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="terminal reveal">
+      <div class="terminal-bar">
+        <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+        <div class="terminal-title">mohit@resume: ~/contact</div>
+      </div>
+      <div class="terminal-body">
+        <h2><span>#</span> Get In Touch</h2>
+        <p>Open to opportunities in Cloud & Systems Engineering. Feel free to reach out!</p>
+        <p><strong>Email:</strong> youremail@example.com</p>
+        <p><strong>Phone:</strong> +91 XXXXXXXXXX</p>
+        <p><strong>Location:</strong> Your City, India</p>
+        <div class="contact-links">
+          <a href="mailto:youremail@example.com">Email</a>
+          <a href="#" target="_blank">LinkedIn</a>
+          <a href="#" target="_blank">GitHub</a>
+          <a href="tel:+91XXXXXXXXXX">Call</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>&copy; 2024 <span>Mohit Lokhande</span>. All Rights Reserved.</footer>
+
+<script>
+// ===== Matrix Rain Background =====
+const canvas = document.getElementById('matrix');
+const ctx = canvas.getContext('2d');
+function resizeCanvas(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+const letters = "アイウエオカキクケコサシスセソ01アイウエオABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const fontSize = 16;
+let columns = Math.floor(canvas.width / fontSize);
+let drops = new Array(columns).fill(1);
+
+function drawMatrix(){
+  ctx.fillStyle = "rgba(0,0,0,0.06)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = "#00ff41";
+  ctx.font = fontSize + "px monospace";
+  for(let i=0;i<drops.length;i++){
+    const text = letters.charAt(Math.floor(Math.random()*letters.length));
+    ctx.fillText(text, i*fontSize, drops[i]*fontSize);
+    if(drops[i]*fontSize > canvas.height && Math.random() > 0.975){
+      drops[i] = 0;
+    }
+    drops[i]++;
+  }
+}
+setInterval(drawMatrix, 45);
+
+// ===== Typed Text Effect =====
+const roles = ["Cloud Engineer", "Linux Administrator", "AWS Enthusiast", "Systems Engineer"];
+let roleIndex = 0, charIndex = 0, deleting = false;
+const typedEl = document.getElementById('typedText');
+
+function typeLoop(){
+  const current = roles[roleIndex];
+  if(!deleting){
+    typedEl.textContent = current.substring(0, charIndex+1);
+    charIndex++;
+    if(charIndex === current.length){
+      deleting = true;
+      setTimeout(typeLoop, 1200);
+      return;
+    }
+  } else {
+    typedEl.textContent = current.substring(0, charIndex-1);
+    charIndex--;
+    if(charIndex === 0){
+      deleting = false;
+      roleIndex = (roleIndex+1) % roles.length;
+    }
+  }
+  setTimeout(typeLoop, deleting ? 50 : 100);
+}
+typeLoop();
+
+// ===== Scroll Reveal =====
+const revealEls = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      entry.target.classList.add('show');
+    }
+  });
+},{threshold:0.15});
+revealEls.forEach(el=>observer.observe(el));
+
+// ===== Skill Bar Animation =====
+const bars = document.querySelectorAll('.bar-fill');
+const barObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      entry.target.style.width = entry.target.dataset.w + "%";
+    }
+  });
+},{threshold:0.4});
+bars.forEach(bar=>barObserver.observe(bar));
+
+// ===== Smooth Scroll for Nav =====
+document.querySelectorAll('nav a').forEach(link=>{
+  link.addEventListener('click', function(e){
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if(target){
+      target.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  });
+});
+</script>
+
+</body>
+</html>
